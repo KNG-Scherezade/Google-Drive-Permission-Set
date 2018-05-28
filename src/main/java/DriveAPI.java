@@ -2,8 +2,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Timer;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -24,6 +26,7 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.drive.model.Permission;
+import javafx.animation.PauseTransition;
 
 //template from Java quickstart code and https://developers.google.com/drive/api/v3/batch
 public class DriveAPI {
@@ -38,35 +41,55 @@ public class DriveAPI {
         // Print the names and IDs for up to 10 files.
         FileList result;
 		try {
+		    PauseTransition pause = new PauseTransition();
+		    pause.durationProperty();
 			System.out.println(folder_to_set);
 			result = service.files().list()
 					.setSupportsTeamDrives(true)
 					.setIncludeTeamDriveItems(true)
 			        .setPageSize(1000)
-			        .setFields("files(id, name, mimeType)")
+			        .setOrderBy("modifiedTime")
+			        .setFields("files(id, name, teamDriveId, mimeType)")
 			        .setQ("name=\"" + folder_to_set + "\"")
 			        .execute();
 	        List<File> files = result.getFiles();
 	        if (files == null || files.isEmpty()) {
 	        	return "No files matched";	
 	        } else {
-	            System.out.println("Files:");
+	            System.out.println("Files: " + files.size());
 	            System.out.println(files.toString());
 	            Object[] obj = buildPermissionBatchRequest();
 	            BatchRequest batch = (BatchRequest)obj[0];
 	            @SuppressWarnings("unchecked")
 				JsonBatchCallback<Permission> callback = (JsonBatchCallback<Permission>)obj[1];
+	            int counter = 0;
+	            int batch_counter = 0;       
+	            long now = System.currentTimeMillis();
+        		while(now + 5000 > System.currentTimeMillis() ){}
+	            attatchment.notifyObservers("Estimated time: " +  (files.size() / 100.0 + 3 * (files.size() / 100.0)));	
 	            for (File file : files) {
 	            	addToPermissionBatch(batch, callback, file, role_level, type_of_permission, email_of_permission);
+	            	if (counter++ == 50){
+	            		now = System.currentTimeMillis();
+	            		while(now + 5000 > System.currentTimeMillis() ){}
+	            		batch.execute();
+	            		now = System.currentTimeMillis();
+	            		while(now + 5000 > System.currentTimeMillis() ){}
+	            		System.out.println(batch_counter);
+		            	attatchment.notifyObservers("Batch " + ++batch_counter + " of " + files.size() + " Processed");	            	
+	            		counter = 0;
+	            	}
 	            }
-		        batch.execute();
+	            if(counter != 99){
+	            	batch.execute();
+	            }
 				return "Permissions set finished";	
 	        }
 	
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return "Error setting permissions: " + e.getStackTrace().toString();	
+			return "Error setting permissions: " + e.getMessage();	
 		}
 	}
 	
@@ -96,14 +119,19 @@ public class DriveAPI {
 	private String addToPermissionBatch(BatchRequest batch, JsonBatchCallback<Permission> callback, File file, String role_level, 
 			String type_of_permission, String email_of_permission) throws IOException{				
 			Permission userPermission;
+			file.getTeamDriveId();
 			System.out.println(type_of_permission + " " + role_level + " " + email_of_permission);
 			if(email_of_permission == null){
 				userPermission = new Permission()
-					    .setType(type_of_permission)
+						.set("supportsTeamDrives", "true")
+					    .setType(type_of_permission)			    
 					    .setRole(role_level);
+				//https://content.googleapis.com/drive/v3/files/140rDrFRHMozR_vScecNn7kZepyhYhIvR/permissions?supportsTeamDrives=true&alt=json&key=AIzaSyD-a9IF8KKYgoC3cpgS-Al7hLQDbugrDcw
+				//https://content.googleapis.com/drive/v3/files/1xdm8dubYeTO_WweyW57qsLun6aZTDYUi/permissions?supportsTeamDrives=true&alt=json&key=AIzaSyD-a9IF8KKYgoC3cpgS-Al7hLQDbugrDcw
 			}
 			else{
 				userPermission = new Permission()
+						.set("supportsTeamDrives", "true")
 					    .setType(type_of_permission)
 					    .setRole(role_level)
 					    .setEmailAddress(email_of_permission);
@@ -126,7 +154,7 @@ public class DriveAPI {
 	    	return "Successfully authenticated";
 		} catch (GeneralSecurityException | IOException e) {
 			// TODO Auto-generated catch block
-			return "Error: " +  e.getStackTrace().toString();
+			return "Error: " +  e.getMessage();
 		}
     }
        

@@ -91,6 +91,7 @@ public class ConsoleController implements ActionListener, Observer{
 				}
 				else{
 					console_view.updateConsoleText("Permissions are being set. <strike>Notification when finished</strike>" + "<br>");
+
 					//console_view.createLoadDialog();
 					console_view.updateConsoleText(console_model.setPermissions());
 					console_view.updateConsoleText(startup_message);

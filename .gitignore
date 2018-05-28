@@ -1,6 +1,9 @@
 /bin/
 
-New Folder/
+/New Folder/
+/credentials/
 *.json
+
 /.gradle/
+
 /build/
