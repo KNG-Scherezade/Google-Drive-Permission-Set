@@ -1,52 +1,32 @@
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
-import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.batch.BatchCallback;
 import com.google.api.client.googleapis.batch.BatchRequest;
 import com.google.api.client.googleapis.batch.json.JsonBatchCallback;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.googleapis.json.GoogleJsonError;
-import com.google.api.client.googleapis.json.GoogleJsonErrorContainer;
-import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpHeaders;
-import com.google.api.client.http.HttpRequestFactory;
-import com.google.api.client.http.HttpResponse;
-import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.util.store.DataStore;
-import com.google.api.client.util.store.DataStoreFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
-import com.google.api.services.drive.Drive.Permissions.Update;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.drive.model.Permission;
-import com.google.api.client.googleapis.services.json.AbstractGoogleJsonClient.Builder;
 
 //template from Java quickstart code and https://developers.google.com/drive/api/v3/batch
 public class DriveAPI {
-	private GoogleCredential credential;
-	private JacksonFactory jackson = JacksonFactory.getDefaultInstance();
 	private NetHttpTransport request_transport = new NetHttpTransport();
 	private Drive service;
 	private ConsoleModel attatchment;
@@ -74,7 +54,8 @@ public class DriveAPI {
 	            System.out.println(files.toString());
 	            Object[] obj = buildPermissionBatchRequest();
 	            BatchRequest batch = (BatchRequest)obj[0];
-	            JsonBatchCallback<Permission> callback = (JsonBatchCallback<Permission>)obj[1];
+	            @SuppressWarnings("unchecked")
+				JsonBatchCallback<Permission> callback = (JsonBatchCallback<Permission>)obj[1];
 	            for (File file : files) {
 	            	addToPermissionBatch(batch, callback, file, role_level, type_of_permission, email_of_permission);
 	            }

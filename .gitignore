@@ -2,3 +2,5 @@
 
 New Folder/
 *.json
+/.gradle/
+/build/

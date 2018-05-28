@@ -3,13 +3,6 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -22,15 +15,17 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.border.Border;
 import javax.swing.text.DefaultCaret;
 
 public class ConsoleView  extends JFrame{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private JTextPane console_text = new JTextPane();
 	private JTextField console_input = new JTextField();
 	private JLabel console_label = new JLabel("Google Drive Permission Automator");
@@ -43,7 +38,7 @@ public class ConsoleView  extends JFrame{
 	
 	public ConsoleView() throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException{
 		UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-		this.frame = new JFrame("Permission Setter");
+		this.frame = new JFrame("Drive Permission Setter");
 		
 		frame.setJMenuBar(menu_bar);
 		JMenu menu = new JMenu("File");
@@ -51,7 +46,7 @@ public class ConsoleView  extends JFrame{
 		menu_bar.add(menu);
 		menu.add(exit_item);
 
-		JPanel panel = new JPanel(new BorderLayout());
+		new JPanel(new BorderLayout());
 		frame.getContentPane().setLayout(new BorderLayout());
 		
 		frame.getContentPane().add(console_input, BorderLayout.PAGE_START);
@@ -63,13 +58,14 @@ public class ConsoleView  extends JFrame{
 		JScrollPane scrollPane = new JScrollPane(console_text);
 		frame.getContentPane().add(scrollPane, BorderLayout.CENTER);
 		console_text.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-		console_text.setPreferredSize(new Dimension(400,300));
+		console_text.setPreferredSize(new Dimension(500,300));
 		console_text.setEnabled(false);
 		console_text.setBackground(Color.BLACK);
 		console_text.setCaretColor(Color.WHITE);
 		console_text.setSelectedTextColor(Color.WHITE);
 		console_text.setDisabledTextColor(Color.WHITE);
 		console_text.setContentType("text/html");
+		console_text.setText("Initializing...");
 		DefaultCaret caret = (DefaultCaret)console_text.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
 		

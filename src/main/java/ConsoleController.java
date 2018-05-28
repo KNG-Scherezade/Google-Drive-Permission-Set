@@ -1,9 +1,6 @@
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -29,12 +26,12 @@ public class ConsoleController implements ActionListener, Observer{
 			    	console_view.closeDialog();
 			    }
 			});
+
 			console_view.getConsoleInput().addActionListener(this);
 			
 			this.console_model = new ConsoleModel();
 			this.console_model.attatch(this);
-			String old_messages = this.console_view.getConsoleText();
-			System.out.println(old_messages);
+
 			this.console_view.updateConsoleText("Logging into service...");
 			this.console_view.updateConsoleText(console_model.loggin());
 			this.console_view.updateConsoleText(startup_message);
@@ -43,15 +40,19 @@ public class ConsoleController implements ActionListener, Observer{
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			this.console_view.updateConsoleText("ClassNotFoundException: " + e.getMessage());
 		} catch (InstantiationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			this.console_view.updateConsoleText("InstantiationException: " + e.getMessage());
 		} catch (IllegalAccessException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			this.console_view.updateConsoleText("IllegalAccessException: " + e.getMessage());
 		} catch (UnsupportedLookAndFeelException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			this.console_view.updateConsoleText("UnsupportedLookAndFeelException: " + e.getMessage());
 		}
 	}
 	
