@@ -67,6 +67,12 @@ public class ConsoleController implements ActionListener, Observer{
 				console_model.folder_to_set = console_view.getConsoleInput().getText();
 				console_view.updateConsoleText("Location: " + console_model.folder_to_set + "<br>");
 				
+				console_view.updateConsoleText("Enter the parent ID Code of the folders to set: <br>");
+			}
+			else if(console_model.parent == null){
+				console_model.parent = console_view.getConsoleInput().getText();
+				console_view.updateConsoleText("Parent ID: " + console_model.parent + "<br>");
+				
 				console_view.updateConsoleText("Set the permission level:"
 						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Organizer,"
 						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Owner, "
@@ -99,6 +105,7 @@ public class ConsoleController implements ActionListener, Observer{
 					console_model.role_level = null;
 					console_model.type_of_permission = null;
 					console_model.folder_to_set = null;
+					console_model.parent = null;
 				}
 			}
 			else{
@@ -113,6 +120,7 @@ public class ConsoleController implements ActionListener, Observer{
 				console_model.role_level = null;
 				console_model.type_of_permission = null;
 				console_model.folder_to_set = null;
+				console_model.parent = null;
 			}
 			console_view.getConsoleInput().setText("");
 		}

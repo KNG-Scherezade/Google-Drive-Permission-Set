@@ -9,7 +9,8 @@ public class ConsoleModel extends Observable{
 	public String role_level;
 	public String type_of_permission;
 	public String email_of_permission;
-	
+	public String parent;
+
 	public ArrayList<Observer> observers = new ArrayList<Observer>();
 	
 	public ConsoleModel(){	
@@ -20,7 +21,7 @@ public class ConsoleModel extends Observable{
 		return drive.authenticate();
 	}
 	public String setPermissions(){
-		return drive.setPermissions(folder_to_set, role_level, type_of_permission, email_of_permission);
+		return drive.setPermissions(folder_to_set, role_level, parent, type_of_permission, email_of_permission);
 	}
 	
 	public void attatch(Observer obs){

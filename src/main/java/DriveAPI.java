@@ -3,6 +3,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
@@ -22,6 +23,8 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.Drive.Files;
+import com.google.api.services.drive.Drive.Files.Get;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
@@ -35,7 +38,7 @@ public class DriveAPI {
 	private ConsoleModel attatchment;
 	public DriveAPI(ConsoleModel cm){this.attatchment = cm;}
 	
-	public String setPermissions(String folder_to_set, String role_level, String type_of_permission, String email_of_permission){
+	public String setPermissions(String folder_to_set, String role_level, String parent_id, String type_of_permission, String email_of_permission){
 		type_of_permission = type_of_permission.toLowerCase();
 		role_level = role_level.toLowerCase();
         // Print the names and IDs for up to 10 files.
@@ -44,20 +47,31 @@ public class DriveAPI {
 		    PauseTransition pause = new PauseTransition();
 		    pause.durationProperty();
 			System.out.println(folder_to_set);
-			result = service.files().list()
-					.setSupportsTeamDrives(true)
-					.setIncludeTeamDriveItems(true)
-			        .setPageSize(1000)
-			        .setOrderBy("modifiedTime")
-			        .setFields("files(id, name, teamDriveId, mimeType)")
-			        .setQ("name=\"" + folder_to_set + "\"")
-			        .execute();
+			if(parent_id == ""){
+				result = service.files().list()
+						.setSupportsTeamDrives(true)
+						.setIncludeTeamDriveItems(true)
+				        .setPageSize(1000)
+				        .setOrderBy("modifiedTime")
+				        .setFields("files(id, name, teamDriveId, mimeType)")
+				        .setQ("name=\"" + folder_to_set + "\"")
+				        .execute();
+			}
+			else{
+				result = service.files().list()
+						.setSupportsTeamDrives(true)
+						.setIncludeTeamDriveItems(true)
+				        .setPageSize(1000)
+				        .setOrderBy("modifiedTime")
+				        .setFields("files(id, name, teamDriveId, mimeType, parents)")
+				        .setQ("name=\"" + folder_to_set + "\"")
+				        .execute();
+			}
 	        List<File> files = result.getFiles();
 	        if (files == null || files.isEmpty()) {
 	        	return "No files matched";	
 	        } else {
 	            System.out.println("Files: " + files.size());
-	            System.out.println(files.toString());
 	            Object[] obj = buildPermissionBatchRequest();
 	            BatchRequest batch = (BatchRequest)obj[0];
 	            @SuppressWarnings("unchecked")
@@ -68,6 +82,15 @@ public class DriveAPI {
         		while(now + 5000 > System.currentTimeMillis() ){}
 	            attatchment.notifyObservers("Estimated time: " +  (files.size() / 100.0 + 3 * (files.size() / 100.0)));	
 	            for (File file : files) {
+	            	if(parent_id != ""){
+            			if(!checkParent_ids(file, parent_id)){
+            				continue;
+            			}
+	            	}
+	            	else{
+		            	
+	            	}
+    	
 	            	addToPermissionBatch(batch, callback, file, role_level, type_of_permission, email_of_permission);
 	            	if (counter++ == 50){
 	            		now = System.currentTimeMillis();
@@ -91,6 +114,24 @@ public class DriveAPI {
 			e.printStackTrace();
 			return "Error setting permissions: " + e.getMessage();	
 		}
+	}
+	
+	private boolean checkParent_ids(File file, String parent_id) throws IOException{
+		System.out.println("A" + ((ArrayList)file.get("parents")).get(0));
+		File results = service.files().get((String) ((ArrayList)file.get("parents")).get(0)).setFields("parents").execute();
+    	System.out.println("B" + ((ArrayList)results.get("parents")));
+		if(results.get("parents") != null){
+			System.out.println((String) ((ArrayList)results.get("parents")).get(0) +  " " + parent_id);
+			if(((String) ((ArrayList)results.get("parents")).get(0)).equals(parent_id)){
+				System.out.println("TRUE");
+				return true;
+			}
+			else{
+				checkParent_ids(results, parent_id);
+			}
+		}
+		System.out.println("FALSE");
+		return false;
 	}
 	
 	private Object[] buildPermissionBatchRequest(){
