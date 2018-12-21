@@ -100,12 +100,6 @@ public class ConsoleController implements ActionListener, Observer{
 
 					//console_view.createLoadDialog();
 					console_view.updateConsoleText(console_model.setPermissions());
-					console_view.updateConsoleText(startup_message);
-					console_model.email_of_permission = null;
-					console_model.role_level = null;
-					console_model.type_of_permission = null;
-					console_model.folder_to_set = null;
-					console_model.parent = null;
 				}
 			}
 			else{
@@ -115,20 +109,28 @@ public class ConsoleController implements ActionListener, Observer{
 				console_view.updateConsoleText("Permissions are being set. <strike>Notification when finished</strike>");
 				//console_view.createLoadDialog();
 				console_view.updateConsoleText(console_model.setPermissions());
-				console_view.updateConsoleText(startup_message);
-				console_model.email_of_permission = null;
-				console_model.role_level = null;
-				console_model.type_of_permission = null;
-				console_model.folder_to_set = null;
-				console_model.parent = null;
 			}
-			console_view.getConsoleInput().setText("");
 		}
+		console_view.getConsoleInput().setText("");
+	}
+	
+	public void reinitialize(){
+		console_view.updateConsoleText(startup_message);
+		console_model.email_of_permission = null;
+		console_model.role_level = null;
+		console_model.type_of_permission = null;
+		console_model.folder_to_set = null;
+		console_model.parent = null;
 	}
 
-	@Override
 	public void update(Observable o, Object arg) {
-		console_view.updateConsoleText((String)arg);
+		String[] args = (String[]) arg;
+		if(((String)args[1]) == "c") 
+			console_view.updateConsoleText((String)args[0]);
+		if(((String)args[1]) == "l")
+			console_view.setBottomText((String)args[0]);
+		if(((String)args[1]) == "r")
+			reinitialize();
 	}
 
 }

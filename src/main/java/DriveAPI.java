@@ -32,17 +32,45 @@ import com.google.api.services.drive.model.Permission;
 import javafx.animation.PauseTransition;
 
 //template from Java quickstart code and https://developers.google.com/drive/api/v3/batch
-public class DriveAPI {
+public class DriveAPI implements Runnable{
 	private NetHttpTransport request_transport = new NetHttpTransport();
 	private Drive service;
 	private ConsoleModel attatchment;
-	public DriveAPI(ConsoleModel cm){this.attatchment = cm;}
+	String folder_to_set;
+	String role_level;
+	String parent_id;
+	String type_of_permission;
+	String email_of_permission;
+	
+	public DriveAPI(ConsoleModel cm){
+		this.attatchment = cm;
+
+	}
+	
+	public void setParam(String ft, String rl, String pi, String tp, String ep){
+		folder_to_set = ft;
+		role_level = rl;
+		parent_id = pi;
+		type_of_permission = tp;
+		email_of_permission = ep;
+	}
+
+	@Override
+	public void run() {
+		setPermissions(folder_to_set, role_level, parent_id, type_of_permission, email_of_permission);
+	}
 	
 	public String setPermissions(String folder_to_set, String role_level, String parent_id, String type_of_permission, String email_of_permission){
 		type_of_permission = type_of_permission.toLowerCase();
 		role_level = role_level.toLowerCase();
         // Print the names and IDs for up to 10 files.
         FileList result;
+        
+        
+        String[] message1 = {"Getting all files of name " + folder_to_set + " to set root folder ID " + parent_id , "c"};
+        attatchment.notifyObservers(message1);	
+        
+        
 		try {
 		    PauseTransition pause = new PauseTransition();
 		    pause.durationProperty();
@@ -68,10 +96,16 @@ public class DriveAPI {
 				        .execute();
 			}
 	        List<File> files = result.getFiles();
+	        
+	        
+	        String[] message2 = {"List obtained" + parent_id , "c"};
+	        attatchment.notifyObservers(message2);	
+	        
 	        if (files == null || files.isEmpty()) {
 	        	return "No files matched";	
 	        } else {
 	            System.out.println("Files: " + files.size());
+	            int total_files = files.size();
 	            Object[] obj = buildPermissionBatchRequest();
 	            BatchRequest batch = (BatchRequest)obj[0];
 	            @SuppressWarnings("unchecked")
@@ -80,10 +114,15 @@ public class DriveAPI {
 	            int batch_counter = 0;       
 	            long now = System.currentTimeMillis();
         		while(now + 5000 > System.currentTimeMillis() ){}
-	            attatchment.notifyObservers("Estimated time: " +  (files.size() / 100.0 + 3 * (files.size() / 100.0)));	
+        		String[] message = {"Estimated time: " +  (files.size() / 50 * 20) + " Seconds", "c"};
+	            attatchment.notifyObservers(message);	
+	            int file_no = 0;
+	            String[] message3 = {"Determining root hierarchy of Files and adding them to batch requests: " + parent_id , "c"};
+	            attatchment.notifyObservers(message3);	
 	            for (File file : files) {
 	            	if(parent_id != ""){
             			if(!checkParent_ids(file, parent_id)){
+            				total_files--;
             				continue;
             			}
 	            	}
@@ -92,6 +131,8 @@ public class DriveAPI {
 	            	}
     	
 	            	addToPermissionBatch(batch, callback, file, role_level, type_of_permission, email_of_permission);
+            		String[] message5 = {++file_no + " / " + total_files, "l"};
+            		attatchment.notifyObservers(message5);	
 	            	if (counter++ == 50){
 	            		now = System.currentTimeMillis();
 	            		while(now + 5000 > System.currentTimeMillis() ){}
@@ -99,13 +140,19 @@ public class DriveAPI {
 	            		now = System.currentTimeMillis();
 	            		while(now + 5000 > System.currentTimeMillis() ){}
 	            		System.out.println(batch_counter);
-		            	attatchment.notifyObservers("Batch " + ++batch_counter + " of " + files.size() + " Processed");	            	
+	            		String[] message4 = {"Batch " + ++batch_counter + " of " + (int)Math.ceil(((float)total_files) / 50.0) + "(Estimated) Processed", "c"};
+		            	attatchment.notifyObservers(message4);	   
+		            	            
 	            		counter = 0;
 	            	}
 	            }
 	            if(counter != 99){
 	            	batch.execute();
 	            }
+	            String[] message6 = {total_files + " / " + total_files, "l"};
+	            attatchment.notifyObservers(message6);	
+	            String[] message7 = {"", "r"};
+	            attatchment.notifyObservers(message7);	
 				return "Permissions set finished";	
 	        }
 	
@@ -141,7 +188,8 @@ public class DriveAPI {
 		                        HttpHeaders responseHeaders)
 		      throws IOException {
 		    // Handle error
-			  attatchment.notifyObservers(e.getMessage());
+			  String[] message = {e.getMessage(), "c"};
+			  attatchment.notifyObservers(message);
 			  System.err.println(e.getMessage());
 		  }
 
@@ -150,7 +198,8 @@ public class DriveAPI {
 		                        HttpHeaders responseHeaders)
 		      throws IOException {
 		    System.out.println("Permission ID: " + permission.getId());
-		    attatchment.notifyObservers("Permissions set, ID: " + permission.getId() );
+		    String[] message = {"Permissions set, ID: " + permission.getId() , "c"};
+		    attatchment.notifyObservers(message);
 		  }
 		};
 		Object[] obj = {((Object)service.batch()), ((Object)callback)};
@@ -229,4 +278,5 @@ public class DriveAPI {
                 .build();
         return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
     }
+
 }

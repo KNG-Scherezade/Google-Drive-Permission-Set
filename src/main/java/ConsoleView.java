@@ -116,6 +116,11 @@ public class ConsoleView  extends JFrame{
 	public String getConsoleText(){
 		return console_text.getText();
 	}
+	
+	public void setBottomText(String text){
+		console_label.setText(text);
+	}
+	
 	public void updateConsoleText(String html_line){
 		String text_lines = "<br/><strong style='font-family:Courier New;line-height: 10px;'>> " + html_line + "</strong><br/><br/>";
 		//System.out.println(console_lines.toString());
