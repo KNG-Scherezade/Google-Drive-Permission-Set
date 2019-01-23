@@ -14,6 +14,8 @@ public class ConsoleController implements ActionListener, Observer{
 	public String startup_message = "Type in file/folder you wish to change permissions of. Case insensitive";
 	public ConsoleController(){}
 	
+	private String[] permission_levels = {"Organizer","Owner","Writer","commenter","Reader"};
+	
 	public void initialize(){
 		try {
 			this.console_view = new ConsoleView();
@@ -64,23 +66,53 @@ public class ConsoleController implements ActionListener, Observer{
 		}
 		else{
 			if(console_model.folder_to_set == null){
-				console_model.folder_to_set = console_view.getConsoleInput().getText();
-				console_view.updateConsoleText("Location: " + console_model.folder_to_set + "<br>");
-				
-				console_view.updateConsoleText("Set the permission level:"
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Organizer,"
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Owner, "
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Writer, "
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Commenter, "
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Reader, <br>");
+				if(console_view.getConsoleInput().getText().length() == 0){
+					console_view.updateConsoleText("Invalid input<br/>");
+				}
+				else{
+					console_model.folder_to_set = console_view.getConsoleInput().getText();
+					console_view.updateConsoleText("Location: " + console_model.folder_to_set + "<br>");
+					
+					console_view.updateConsoleText("Enter ID of the lowest directory you wish to set permissions for(Root directory ID must be obtained manually for saftey precautions): <br>"
+							+ "For example in the URL drive/u/0/folders/1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- the ID code "
+							+ "the 1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- is what you will enter:<br/>");
+				}
+			}
+			else if(console_model.parent == null){
+				//check if invalid format
+				if(console_view.getConsoleInput().getText().length() == 0){
+					console_view.updateConsoleText("This is not a valid ID length<br/>");
+				}
+				else{
+					console_model.parent = console_view.getConsoleInput().getText();
+					console_view.updateConsoleText("Parent ID: " + console_model.parent + "<br>");
+					
+					console_view.updateConsoleText("Set the permission level:"
+							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Organizer,"
+							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Owner, "
+							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Writer, "
+							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Commenter, "
+							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Reader, <br>");
+				}
 			}
 			else if(console_model.role_level == null){
-				console_model.role_level = console_view.getConsoleInput().getText();
-				console_view.updateConsoleText("Level: " +console_model.role_level + "<br>");
-				
-				console_view.updateConsoleText("Set who it aplies to:"
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> User,"
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Anyone, <br>");
+				boolean safe = false;
+				for (String permision : permission_levels){
+					if(console_view.getConsoleInput().getText().equalsIgnoreCase(permision)){
+						safe = true;
+					}
+				}
+				if(safe){
+					console_model.role_level = console_view.getConsoleInput().getText();
+					console_view.updateConsoleText("Level: " +console_model.role_level + "<br>");
+					
+					console_view.updateConsoleText("Set who it aplies to:"
+							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> User,"
+							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Anyone, <br>");
+				}
+				else{
+					console_view.updateConsoleText("Invalid Input<br/>");
+				}
 			}
 			else if(console_model.type_of_permission == null){
 				console_model.type_of_permission = console_view.getConsoleInput().getText();
@@ -94,11 +126,6 @@ public class ConsoleController implements ActionListener, Observer{
 
 					//console_view.createLoadDialog();
 					console_view.updateConsoleText(console_model.setPermissions());
-					console_view.updateConsoleText(startup_message);
-					console_model.email_of_permission = null;
-					console_model.role_level = null;
-					console_model.type_of_permission = null;
-					console_model.folder_to_set = null;
 				}
 			}
 			else{
@@ -108,19 +135,30 @@ public class ConsoleController implements ActionListener, Observer{
 				console_view.updateConsoleText("Permissions are being set. <strike>Notification when finished</strike>");
 				//console_view.createLoadDialog();
 				console_view.updateConsoleText(console_model.setPermissions());
-				console_view.updateConsoleText(startup_message);
-				console_model.email_of_permission = null;
-				console_model.role_level = null;
-				console_model.type_of_permission = null;
-				console_model.folder_to_set = null;
 			}
-			console_view.getConsoleInput().setText("");
 		}
+		console_view.getConsoleInput().setText("");
+	}
+	
+	public void reinitialize(){
+		console_view.updateConsoleText(startup_message);
+		console_model.email_of_permission = null;
+		console_model.role_level = null;
+		console_model.type_of_permission = null;
+		console_model.folder_to_set = null;
+		console_model.parent = null;
 	}
 
-	@Override
 	public void update(Observable o, Object arg) {
-		console_view.updateConsoleText((String)arg);
+		String[] args = (String[]) arg;
+		if(((String)args[1]) == "c") 
+			console_view.updateConsoleText((String)args[0]);
+		if(((String)args[1]) == "l")
+			console_view.setBottomText((String)args[0]);
+		if(((String)args[1]) == "r"){
+			console_view.updateConsoleText((String)args[0]);
+			reinitialize();
+		}
 	}
 
 }
