@@ -5,7 +5,11 @@ Automates Setting permissions on google drive
 2) Get files from build/libs
 3) Run file and follow instructions
 
-At the moment this can only search 1000 files at a time. This is the restriction of the API and to bypass these issues I recommend renaming anything where you think the name is reused a lot.
+### Imporant Notes
+At the moment this can only search 1000 files at a time. This is the restriction of the API and to bypass these issues I recommend renaming anything where you think the name is reused a lot. The program will give an error message just to make sure you do not encounter this problem and blame me. There is a fix, but unless demanded the hack solution will be done.<br/>
+For a similar reason, you can't set Permissions based off of the root directory to ensure you do not mess with other people's similarly named files in shared drive projects.
+
+### Tutorial
 
 In google drive say you have a bunch of folders and within them identically named files.<br/>
 <img src="http://puu.sh/CAYYo/52a487e195.png"/>
