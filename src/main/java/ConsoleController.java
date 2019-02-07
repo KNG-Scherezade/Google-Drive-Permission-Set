@@ -11,10 +11,12 @@ public class ConsoleController implements ActionListener, Observer{
 	
 	private ConsoleView console_view;
 	private ConsoleModel console_model;
-	public String startup_message = "Type in file/folder you wish to change permissions of. Case insensitive";
+	public String startup_message = "Enter ID of the lowest directory you wish to set permissions for(Root directory ID must be obtained manually for saftey precautions): <br>"
+							+ "For example in the URL drive/u/0/folders/1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- the ID code "
+							+ " 1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- is what you will enter:<br/>";
 	public ConsoleController(){}
 	
-	private String[] permission_levels = {"Organizer","Owner","Writer","commenter","Reader"};
+	private String[] permission_levels = {"Organizer","Owner","writer","commenter","reader"};
 	
 	public void initialize(){
 		try {
@@ -65,7 +67,19 @@ public class ConsoleController implements ActionListener, Observer{
 			console_view.closeDialog();
 		}
 		else{
-			if(console_model.folder_to_set == null){
+			if(console_model.parent == null){
+				if(console_view.getConsoleInput().getText().length() == 0){
+					console_view.updateConsoleText("This is not a valid ID length<br/>");
+				}
+				else{
+					console_model.parent = console_view.getConsoleInput().getText();
+					console_view.updateConsoleText("Parent ID: " + console_model.parent + "<br>");
+									
+					console_view.updateConsoleText("Type in file/folder you wish to change permissions of. Case insensitive");
+				}
+			}
+			else if(console_model.folder_to_set == null){
+				//check if invalid format
 				if(console_view.getConsoleInput().getText().length() == 0){
 					console_view.updateConsoleText("Invalid input<br/>");
 				}
@@ -73,26 +87,12 @@ public class ConsoleController implements ActionListener, Observer{
 					console_model.folder_to_set = console_view.getConsoleInput().getText();
 					console_view.updateConsoleText("Location: " + console_model.folder_to_set + "<br>");
 					
-					console_view.updateConsoleText("Enter ID of the lowest directory you wish to set permissions for(Root directory ID must be obtained manually for saftey precautions): <br>"
-							+ "For example in the URL drive/u/0/folders/1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- the ID code "
-							+ "the 1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- is what you will enter:<br/>");
-				}
-			}
-			else if(console_model.parent == null){
-				//check if invalid format
-				if(console_view.getConsoleInput().getText().length() == 0){
-					console_view.updateConsoleText("This is not a valid ID length<br/>");
-				}
-				else{
-					console_model.parent = console_view.getConsoleInput().getText();
-					console_view.updateConsoleText("Parent ID: " + console_model.parent + "<br>");
-					
 					console_view.updateConsoleText("Set the permission level:"
-							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Organizer,"
-							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Owner, "
-							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Writer, "
-							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Commenter, "
-							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Reader, <br>");
+//							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Organizer,"
+//							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Owner, "
+							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Add/Edit, "
+//							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Commenter, "
+							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> View Only, <br>");
 				}
 			}
 			else if(console_model.role_level == null){
@@ -100,6 +100,14 @@ public class ConsoleController implements ActionListener, Observer{
 				for (String permision : permission_levels){
 					if(console_view.getConsoleInput().getText().equalsIgnoreCase(permision)){
 						safe = true;
+					}
+					else if(console_view.getConsoleInput().getText().equalsIgnoreCase("Add/Edit")){
+						safe = true;
+						console_view.getConsoleInput().setText("writer");
+					}
+					else if(console_view.getConsoleInput().getText().equalsIgnoreCase("View Only")){
+						safe = true;
+						console_view.getConsoleInput().setText("reader");
 					}
 				}
 				if(safe){

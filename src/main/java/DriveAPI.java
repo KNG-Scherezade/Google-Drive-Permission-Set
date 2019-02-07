@@ -162,7 +162,8 @@ public class DriveAPI implements Runnable{
 	            		counter = 0;
 	            	}
 	            }
-	            System.out.println(total_files);
+	            System.out.print(total_files + " ");
+	            System.out.println(counter);
 	            if(total_files == 0){
 		            String[] message7 = {"Nothing was found for " + parent_id + " <br/>", "r"};
 		            attatchment.notifyObservers(message7);	
@@ -194,10 +195,10 @@ public class DriveAPI implements Runnable{
 			}
 			else{
 		    	File results = service.files().get((String) ((ArrayList)file.get("parents")).get(0)).setFields("parents").execute();
-				checkParent_ids(results, parent_id);
+		    	return checkParent_ids(results, parent_id);
 			}
 		}
-		return false;
+		else return false;
 	}
 	
 	private Object[] buildPermissionBatchRequest(){
