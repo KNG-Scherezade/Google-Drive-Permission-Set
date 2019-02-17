@@ -11,9 +11,9 @@ public class ConsoleController implements ActionListener, Observer{
 	
 	private ConsoleView console_view;
 	private ConsoleModel console_model;
-	public String startup_message = "Enter ID of the lowest directory you wish to set permissions for(Root directory ID must be obtained manually for saftey precautions): <br>"
-							+ "For example in the URL drive/u/0/folders/1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- the ID code "
-							+ " 1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- is what you will enter:<br/>";
+	public String startup_message = "Enter 1 if you want to set permissions<br/>Enter 2 if you want to remove permissions:<br/>";
+	public int setting_state = -1;
+	
 	public ConsoleController(){}
 	
 	private String[] permission_levels = {"Organizer","Owner","writer","commenter","reader"};
@@ -67,85 +67,130 @@ public class ConsoleController implements ActionListener, Observer{
 			console_view.closeDialog();
 		}
 		else{
-			if(console_model.parent == null){
-				if(console_view.getConsoleInput().getText().length() == 0){
-					console_view.updateConsoleText("This is not a valid ID length<br/>");
-				}
-				else{
-					console_model.parent = console_view.getConsoleInput().getText();
-					console_view.updateConsoleText("Parent ID: " + console_model.parent + "<br>");
-									
-					console_view.updateConsoleText("Type in file/folder you wish to change permissions of. Case insensitive");
-				}
+			if(setting_state == 1){
+				setPermissions();
 			}
-			else if(console_model.folder_to_set == null){
-				//check if invalid format
-				if(console_view.getConsoleInput().getText().length() == 0){
-					console_view.updateConsoleText("Invalid input<br/>");
-				}
-				else{
-					console_model.folder_to_set = console_view.getConsoleInput().getText();
-					console_view.updateConsoleText("Location: " + console_model.folder_to_set + "<br>");
-					
-					console_view.updateConsoleText("Set the permission level:"
-//							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Organizer,"
-//							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Owner, "
-							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Add/Edit, "
-//							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Commenter, "
-							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> View Only, <br>");
-				}
+			else if(setting_state == 2){
+				clearPermissions();
 			}
-			else if(console_model.role_level == null){
-				boolean safe = false;
-				for (String permision : permission_levels){
-					if(console_view.getConsoleInput().getText().equalsIgnoreCase(permision)){
-						safe = true;
-					}
-					else if(console_view.getConsoleInput().getText().equalsIgnoreCase("Add/Edit")){
-						safe = true;
-						console_view.getConsoleInput().setText("writer");
-					}
-					else if(console_view.getConsoleInput().getText().equalsIgnoreCase("View Only")){
-						safe = true;
-						console_view.getConsoleInput().setText("reader");
-					}
-				}
-				if(safe){
-					console_model.role_level = console_view.getConsoleInput().getText();
-					console_view.updateConsoleText("Level: " +console_model.role_level + "<br>");
-					
-					console_view.updateConsoleText("Set who it aplies to:"
-							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> User,"
-							+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Anyone, <br>");
-				}
-				else{
-					console_view.updateConsoleText("Invalid Input<br/>");
-				}
+			else if (console_view.getConsoleInput().getText().equals("1")){
+				console_view.updateConsoleText("Enter ID of the lowest directory you wish to SET permissions for(Root directory ID must be obtained manually for saftey precautions): <br>"
+						+ "For example in the URL drive/u/0/folders/1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- the ID code "
+						+ " 1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- is what you will enter:<br/>");
+				setting_state = 1;
 			}
-			else if(console_model.type_of_permission == null){
-				console_model.type_of_permission = console_view.getConsoleInput().getText();
-				console_view.updateConsoleText("Applies: " + console_model.type_of_permission + "<br>");
-				
-				if(console_model.type_of_permission.equalsIgnoreCase("user")){
-					console_view.updateConsoleText("Enter the email-address of the user to which the permission effects:" + "<br>");			
-				}
-				else{
-					console_view.updateConsoleText("Permissions are being set. <strike>Notification when finished</strike>" + "<br>");
-
-					//console_view.createLoadDialog();
-					console_view.updateConsoleText(console_model.setPermissions());
-				}
+			else if (console_view.getConsoleInput().getText().equals("2")){
+				console_view.updateConsoleText("Enter ID of the lowest directory you wish to REMOVE permissions for(Root directory ID must be obtained manually for saftey precautions): <br>"
+						+ "For example in the URL drive/u/0/folders/1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- the ID code "
+						+ " 1BIsA5ys1YHc7oKY_znJMu8-g2rOjr9p- is what you will enter<br/>"
+						+ "Permissions will propogate upwards:<br/>");		
+				setting_state = 2;
 			}
 			else{
-				console_model.email_of_permission = console_view.getConsoleInput().getText();
-				console_view.updateConsoleText("EMail: " +console_model.email_of_permission + "<br>");
+				console_view.updateConsoleText("err: input - " + console_view.getConsoleInput().getText() + "<br/>State: " + setting_state );
+			}
+		}
+		console_view.getConsoleInput().setText("");
+	}
+	
+	public void setPermissions(){
+		if(console_model.parent == null){
+			if(console_view.getConsoleInput().getText().length() == 0){
+				console_view.updateConsoleText("This is not a valid ID length<br/>");
+			}
+			else{
+				console_model.parent = console_view.getConsoleInput().getText();
+				console_view.updateConsoleText("Parent ID: " + console_model.parent + "<br>");
+								
+				console_view.updateConsoleText("Type in file/folder you wish to change permissions of. Case insensitive");
+			}
+		}
+		else if(console_model.folder_to_set == null){
+			//check if invalid format
+			if(console_view.getConsoleInput().getText().length() == 0){
+				console_view.updateConsoleText("Invalid input<br/>");
+			}
+			else{
+				console_model.folder_to_set = console_view.getConsoleInput().getText();
+				console_view.updateConsoleText("Location: " + console_model.folder_to_set + "<br>");
 				
-				console_view.updateConsoleText("Permissions are being set. <strike>Notification when finished</strike>");
+				console_view.updateConsoleText("Set the permission level:"
+//						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Organizer,"
+//						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Owner, "
+						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Add/Edit, "
+//						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Commenter, "
+						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> View Only, <br>");
+			}
+		}
+		else if(console_model.role_level == null){
+			boolean safe = false;
+			for (String permision : permission_levels){
+				if(console_view.getConsoleInput().getText().equalsIgnoreCase(permision)){
+					safe = true;
+				}
+				else if(console_view.getConsoleInput().getText().equalsIgnoreCase("Add/Edit")){
+					safe = true;
+					console_view.getConsoleInput().setText("writer");
+				}
+				else if(console_view.getConsoleInput().getText().equalsIgnoreCase("View Only")){
+					safe = true;
+					console_view.getConsoleInput().setText("reader");
+				}
+			}
+			if(safe){
+				console_model.role_level = console_view.getConsoleInput().getText();
+				console_view.updateConsoleText("Level: " +console_model.role_level + "<br>");
+				
+				console_view.updateConsoleText("Set who it aplies to:"
+						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> User,"
+						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Anyone, <br>");
+			}
+			else{
+				console_view.updateConsoleText("Invalid Input<br/>");
+			}
+		}
+		else if(console_model.type_of_permission == null){
+			console_model.type_of_permission = console_view.getConsoleInput().getText();
+			console_view.updateConsoleText("Applies: " + console_model.type_of_permission + "<br>");
+			
+			if(console_model.type_of_permission.equalsIgnoreCase("user")){
+				console_view.updateConsoleText("Enter the email-address of the user to which the permission effects:" + "<br>");			
+			}
+			else{
+				console_view.updateConsoleText("Permissions are being set." + "<br>");
+
 				//console_view.createLoadDialog();
 				console_view.updateConsoleText(console_model.setPermissions());
 			}
 		}
-		console_view.getConsoleInput().setText("");
+		else{
+			console_model.email_of_permission = console_view.getConsoleInput().getText();
+			console_view.updateConsoleText("EMail: " +console_model.email_of_permission + "<br>");
+			
+			console_view.updateConsoleText("Permissions are being set. <strike>Notification when finished</strike>");
+			//console_view.createLoadDialog();
+			console_view.updateConsoleText(console_model.setPermissions());
+		}
+	}
+	
+	public void clearPermissions(){
+		if(console_model.parent == null){
+			if(console_view.getConsoleInput().getText().length() == 0){
+				console_view.updateConsoleText("This is not a valid ID length<br/>");
+			}
+			else{
+				console_model.parent = console_view.getConsoleInput().getText();
+				console_view.updateConsoleText("Parent ID: " + console_model.parent + "<br>");
+								
+				console_view.updateConsoleText("Type in 1 to delete all permissions under: " + console_model.parent);
+			}
+		}
+		else if(console_view.getConsoleInput().getText().equals("1")){
+			console_view.updateConsoleText(console_model.deletePermissions());
+		}
+		else{
+			reinitialize();
+		}
 	}
 	
 	public void reinitialize(){
@@ -155,6 +200,7 @@ public class ConsoleController implements ActionListener, Observer{
 		console_model.type_of_permission = null;
 		console_model.folder_to_set = null;
 		console_model.parent = null;
+		setting_state = -1;
 	}
 
 	public void update(Observable o, Object arg) {

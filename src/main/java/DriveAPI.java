@@ -29,6 +29,8 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.drive.model.Permission;
+import com.google.api.services.drive.model.PermissionList;
+
 import javafx.animation.PauseTransition;
 
 //template from Java quickstart code and https://developers.google.com/drive/api/v3/batch
@@ -60,7 +62,10 @@ public class DriveAPI implements Runnable{
 
 	@Override
 	public void run() {
-		setPermissions(folder_to_set, role_level, parent_id, type_of_permission, email_of_permission);
+		if(folder_to_set != null)
+			setPermissions(folder_to_set, role_level, parent_id, type_of_permission, email_of_permission);
+		else
+			clearPermissions(parent_id);
 	}
 	
 	public String setPermissions(String folder_to_set, String role_level, String parent_id, String type_of_permission, String email_of_permission){
@@ -78,26 +83,15 @@ public class DriveAPI implements Runnable{
 		    PauseTransition pause = new PauseTransition();
 		    pause.durationProperty();
 			System.out.println(folder_to_set);
-			if(parent_id == ""){
 				result = service.files().list()
 						.setSupportsTeamDrives(true)
 						.setIncludeTeamDriveItems(true)
 				        .setPageSize(1000)
-				        .setOrderBy("modifiedTime")
-				        .setFields("files(id, name, teamDriveId, mimeType)")
-				        .setQ("name=\"" + folder_to_set + "\"")
-				        .execute();
-			}
-			else{
-				result = service.files().list()
-						.setSupportsTeamDrives(true)
-						.setIncludeTeamDriveItems(true)
-				        .setPageSize(1000)
-				        .setOrderBy("modifiedTime")
+				        .setOrderBy("createdTime")
 				        .setFields("files(id, name, teamDriveId, mimeType, parents)")
 				        .setQ("name=\"" + folder_to_set + "\"")
 				        .execute();
-			}
+
 	        List<File> files = result.getFiles();
 	        
 	        
@@ -120,7 +114,7 @@ public class DriveAPI implements Runnable{
 		            attatchment.notifyObservers(count_msg);	
 	            }
 	            
-	            Object[] obj = buildPermissionBatchRequest();
+	            Object[] obj = buildSetPermissionBatchRequest();
 	            BatchRequest batch = (BatchRequest)obj[0];
 	            @SuppressWarnings("unchecked")
 				JsonBatchCallback<Permission> callback = (JsonBatchCallback<Permission>)obj[1];
@@ -146,7 +140,7 @@ public class DriveAPI implements Runnable{
 
 	            	}
     	
-	            	addToPermissionBatch(batch, callback, file, role_level, type_of_permission, email_of_permission);
+	            	addToSetPermissionBatch(batch, callback, file, role_level, type_of_permission, email_of_permission);
             		String[] message5 = {++file_no + " / " + total_files, "l"};
             		attatchment.notifyObservers(message5);	
 	            	if (counter++ == batch_size){
@@ -187,6 +181,106 @@ public class DriveAPI implements Runnable{
 		}
 	}
 	
+	public List<File> getFilesFromParent(String parent_id, List<File> file_obj) throws IOException{
+		System.out.println("A");
+        FileList result = service.files().list()
+				.setSupportsTeamDrives(true)
+				.setIncludeTeamDriveItems(true)
+		        .setPageSize(1000)
+		        .setOrderBy("createdTime")
+		        .setFields("files(id, name, teamDriveId, mimeType)")
+		        //.setQ("\'" + folder_to_set +"\' in parents")
+		        .setQ("\'" + parent_id + "\' in parents")
+		        .execute();
+        List<File> files = result.getFiles();
+        
+        List<File> files_final = result.getFiles();
+        
+        for(int file = 0 ; file < files.size(); file++){
+        	System.out.println(files.get(file).getMimeType() + " " + files.size());
+        	if(files.get(file).getMimeType().equals("application/vnd.google-apps.folder")){
+        		System.out.println(files.get(file).getId());
+        		List<File> files_extra = getFilesFromParent(files.get(file).getId(), null);
+        		files_final.addAll(files_extra);
+        	}
+        }
+        System.out.println(files.size());
+        System.out.println(files_final.size());
+        String[] message2 = {"" + files.size() , "l"};
+        attatchment.notifyObservers(message2);	
+        return files_final;
+	}
+	
+	public String clearPermissions(String parent_id){
+		String[] message1 = {"Removing permission on all files higher than " + parent_id , "c"};
+        attatchment.notifyObservers(message1);	
+
+
+        
+		try {
+		    PauseTransition pause = new PauseTransition();
+		    pause.durationProperty();
+
+		    List<File> files = getFilesFromParent(parent_id, null);
+	        
+	        String[] message2 = {"List obtained " + parent_id + " number " + files.size() , "c"};
+	        attatchment.notifyObservers(message2);	
+	        
+	        System.out.println(files.size());
+	        
+            Object[] obj = buildDeletePermissionBatchRequest();
+            BatchRequest batch = (BatchRequest)obj[0];
+            @SuppressWarnings("unchecked")
+			JsonBatchCallback<Void> callback = (JsonBatchCallback<Void>)obj[1];
+            int counter = 0;
+            int batch_counter = 0;       
+            int file_no = 0;
+            int total_files = files.size();
+	        for (File file : files) {	
+	            long now = System.currentTimeMillis();
+	    		while(now + cooldown_time > System.currentTimeMillis() ){}	    
+            	addToDeletePermissionBatch(batch, callback, file);
+        		String[] message5 = {++file_no + " / " + total_files, "l"};
+        		attatchment.notifyObservers(message5);	
+            	if (counter++ == batch_size){
+            		now = System.currentTimeMillis();
+            		while(now + cooldown_time > System.currentTimeMillis() ){}
+            		batch.execute();
+            		now = System.currentTimeMillis();
+            		while(now + cooldown_time > System.currentTimeMillis() ){}
+            		System.out.println(batch_counter);
+            		String[] message4 = {"Batch " + ++batch_counter + " of " + (int)Math.ceil(((float)total_files) / batch_size) + "(Estimated) Processed", "c"};
+	            	attatchment.notifyObservers(message4);	   
+	            	            
+            		counter = 0;
+            	}
+            }
+	        System.out.print(total_files + " ");
+	        System.out.println(counter);
+	        if(total_files == 0){
+	            String[] message7 = {"Nothing was found for " + parent_id + " <br/>", "r"};
+	            attatchment.notifyObservers(message7);	
+				return "Permissions set finished";	
+	        }
+	        else if(counter != batch_size - 1){
+	        	batch.execute();
+	        }
+	        String[] message6 = {total_files + " / " + total_files, "l"};
+	        attatchment.notifyObservers(message6);
+		}
+		catch (IOException e){
+			e.printStackTrace();
+			return "Error setting permissions: " + e.getMessage();	
+		}
+		
+
+        String[] message7 = {"", "r"};
+        attatchment.notifyObservers(message7);	
+		return "Permissions set finished";	
+      
+		
+	}
+	
 	private boolean checkParent_ids(File file, String parent_id) throws IOException{
 		if(file.get("parents") != null){
 			if(((String) ((ArrayList)file.get("parents")).get(0)).equals(parent_id)){
@@ -201,7 +295,7 @@ public class DriveAPI implements Runnable{
 		else return false;
 	}
 	
-	private Object[] buildPermissionBatchRequest(){
+	private Object[] buildSetPermissionBatchRequest(){
 		JsonBatchCallback<Permission> callback = new JsonBatchCallback<Permission>() {
 		@Override
 		  public void onFailure(GoogleJsonError e,
@@ -226,7 +320,7 @@ public class DriveAPI implements Runnable{
 		return obj;
 	}
 	
-	private String addToPermissionBatch(BatchRequest batch, JsonBatchCallback<Permission> callback, File file, String role_level, 
+	private String addToSetPermissionBatch(BatchRequest batch, JsonBatchCallback<Permission> callback, File file, String role_level, 
 			String type_of_permission, String email_of_permission) throws IOException{				
 			Permission userPermission;
 			file.getTeamDriveId();
@@ -250,6 +344,45 @@ public class DriveAPI implements Runnable{
 			service.permissions().create(file.getId(), userPermission)
 				    .setFields("id")
 				    .queue(batch, callback);
+			return "Batch added";
+	}
+	
+	private Object[] buildDeletePermissionBatchRequest(){
+		JsonBatchCallback<Permission> callback = new JsonBatchCallback<Permission>() {
+		@Override
+		  public void onFailure(GoogleJsonError e,
+		                        HttpHeaders responseHeaders)
+		      throws IOException {
+		    // Handle error
+			  String[] message = {e.getMessage(), "c"};
+			  attatchment.notifyObservers(message);
+			  System.err.println(e.getMessage());
+		  }
+
+		  @Override
+		  public void onSuccess(Permission permission,
+		                        HttpHeaders responseHeaders)
+		      throws IOException {
+		    System.out.println("Permissions Removed");
+		    String[] message = {"Permissions Removed", "c"};
+		    attatchment.notifyObservers(message);
+		  }
+		};
+		Object[] obj = {((Object)service.batch()), ((Object)callback)};
+		return obj;
+	}
+	
+	
+	private String addToDeletePermissionBatch(BatchRequest batch, JsonBatchCallback<Void> callback, File file) throws IOException{				
+			PermissionList permissions = service.permissions().list(file.getId()).execute();
+		
+			for(Permission perm : permissions.getPermissions()){
+				System.out.println(perm.toString());
+				if(!perm.getRole().equalsIgnoreCase("owner")){
+					service.permissions().delete(file.getId(), perm.getId())
+						    .queue(batch, callback);
+				}
+			}
 			return "Batch added";
 	}
 	

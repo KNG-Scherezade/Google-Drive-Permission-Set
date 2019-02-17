@@ -26,6 +26,12 @@ public class ConsoleModel extends Observable{
 		return ("Permission thread started");
 	}
 	
+	public String deletePermissions(){
+		drive.setParam(null, null, parent, null, null);
+		new Thread(drive).start();
+		return ("Permission thread started");
+	}
+	
 	public void attatch(Observer obs){
 		observers.add(obs);
 	}
