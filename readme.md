@@ -1,3 +1,5 @@
+Most of this is since outdated
+
 # Google-Drive-Permission-Set
 Automates Setting permissions on google drive
 ## How to use

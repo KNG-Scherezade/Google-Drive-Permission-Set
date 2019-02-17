@@ -11,7 +11,7 @@ public class ConsoleController implements ActionListener, Observer{
 	
 	private ConsoleView console_view;
 	private ConsoleModel console_model;
-	public String startup_message = "Enter 1 if you want to set permissions<br/>Enter 2 if you want to remove permissions:<br/>";
+	public String startup_message = "Enter 1 if you want to set permissions<br/>> Enter 2 if you want to remove permissions:<br/>";
 	public int setting_state = -1;
 	
 	public ConsoleController(){}
@@ -117,9 +117,9 @@ public class ConsoleController implements ActionListener, Observer{
 				console_view.updateConsoleText("Set the permission level:"
 //						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Organizer,"
 //						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Owner, "
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Add/Edit, "
+						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Enter 1 for Add/Edit"
 //						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Commenter, "
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> View Only, <br>");
+						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Enter 2 for View Only <br>");
 			}
 		}
 		else if(console_model.role_level == null){
@@ -128,11 +128,11 @@ public class ConsoleController implements ActionListener, Observer{
 				if(console_view.getConsoleInput().getText().equalsIgnoreCase(permision)){
 					safe = true;
 				}
-				else if(console_view.getConsoleInput().getText().equalsIgnoreCase("Add/Edit")){
+				else if(console_view.getConsoleInput().getText().equalsIgnoreCase("1")){
 					safe = true;
 					console_view.getConsoleInput().setText("writer");
 				}
-				else if(console_view.getConsoleInput().getText().equalsIgnoreCase("View Only")){
+				else if(console_view.getConsoleInput().getText().equalsIgnoreCase("2")){
 					safe = true;
 					console_view.getConsoleInput().setText("reader");
 				}
@@ -142,21 +142,22 @@ public class ConsoleController implements ActionListener, Observer{
 				console_view.updateConsoleText("Level: " +console_model.role_level + "<br>");
 				
 				console_view.updateConsoleText("Set who it aplies to:"
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> User,"
-						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Anyone, <br>");
+						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Enter 1 for  User"
+						+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Enter 2 for Anyone<br>");
 			}
 			else{
 				console_view.updateConsoleText("Invalid Input<br/>");
 			}
 		}
 		else if(console_model.type_of_permission == null){
-			console_model.type_of_permission = console_view.getConsoleInput().getText();
-			console_view.updateConsoleText("Applies: " + console_model.type_of_permission + "<br>");
-			
-			if(console_model.type_of_permission.equalsIgnoreCase("user")){
+			if(console_view.getConsoleInput().getText().equalsIgnoreCase("1")){
+				console_model.type_of_permission = "user";
+				console_view.updateConsoleText("Applies: " + console_model.type_of_permission + "<br>");
 				console_view.updateConsoleText("Enter the email-address of the user to which the permission effects:" + "<br>");			
 			}
-			else{
+			else if(console_view.getConsoleInput().getText().equalsIgnoreCase("2")) {
+				console_model.type_of_permission = "anyone";
+				console_view.updateConsoleText("Applies: " + console_model.type_of_permission + "<br>");
 				console_view.updateConsoleText("Permissions are being set." + "<br>");
 
 				//console_view.createLoadDialog();

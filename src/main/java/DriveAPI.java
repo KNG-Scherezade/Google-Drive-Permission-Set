@@ -83,17 +83,10 @@ public class DriveAPI implements Runnable{
 		    PauseTransition pause = new PauseTransition();
 		    pause.durationProperty();
 			System.out.println(folder_to_set);
-				result = service.files().list()
-						.setSupportsTeamDrives(true)
-						.setIncludeTeamDriveItems(true)
-				        .setPageSize(1000)
-				        .setOrderBy("createdTime")
-				        .setFields("files(id, name, teamDriveId, mimeType, parents)")
-				        .setQ("name=\"" + folder_to_set + "\"")
-				        .execute();
-
-	        List<File> files = result.getFiles();
-	        
+			
+			String[] hunt_message = {"Hunting for files and folders...", "c"};
+	        attatchment.notifyObservers(hunt_message );
+		    List<File> files = getFilesFromParent(parent_id, null);
 	        
 	        String[] message2 = {"List obtained " + parent_id , "c"};
 	        attatchment.notifyObservers(message2);	
@@ -104,15 +97,8 @@ public class DriveAPI implements Runnable{
 	            System.out.println("Files: " + files.size());
 	            int total_files = files.size();
 	            
-	            if(total_files == 1000){
-		            String[] failmsg = {"1000 files detected(API limit is 1000 files). This program will not run since some data could potentially be missed. Rename your files and try again", "r"};
-		            attatchment.notifyObservers(failmsg);	
-					return "Permissions set finished";	
-	            }
-	            else{
-	            	String[] count_msg = {"Checking " + total_files + " files.", "c"};
-		            attatchment.notifyObservers(count_msg);	
-	            }
+            	String[] count_msg = {"Checking " + total_files + " files.", "c"};
+	            attatchment.notifyObservers(count_msg);	
 	            
 	            Object[] obj = buildSetPermissionBatchRequest();
 	            BatchRequest batch = (BatchRequest)obj[0];
@@ -125,20 +111,16 @@ public class DriveAPI implements Runnable{
         		String[] message = {"Estimated time: " +  (files.size() / batch_size * 20) + " Seconds", "c"};
 	            attatchment.notifyObservers(message);	
 	            int file_no = 0;
-	            String[] message3 = {"Determining root hierarchy of Files and adding them to batch requests: " + parent_id , "c"};
+	            String[] message3 = {"Determining which are " + folder_to_set + " from " + total_files, "c"};
 	            attatchment.notifyObservers(message3);	
 	            for (File file : files) {
-	            	if(parent_id != ""){
         				String[] file_count = {total_files + " " + file.getId(), "l"};
         		    	attatchment.notifyObservers(file_count);	
-            			if(!checkParent_ids(file, parent_id)){
-            				total_files--;
-            				continue;
-            			}
-	            	}
-	            	else{
-
-	            	}
+        			if(!file.getName().equalsIgnoreCase(folder_to_set)){
+        				total_files--;
+        				System.out.println(total_files);
+        				continue;
+        			}
     	
 	            	addToSetPermissionBatch(batch, callback, file, role_level, type_of_permission, email_of_permission);
             		String[] message5 = {++file_no + " / " + total_files, "l"};
@@ -174,9 +156,10 @@ public class DriveAPI implements Runnable{
 
 	        }
 	
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+		} catch (Exception e) {
 			e.printStackTrace();
+    		String[] message4 = {"Error: " + e.toString(), "c"};
+        	attatchment.notifyObservers(message4);	   
 			return "Error setting permissions: " + e.getMessage();	
 		}
 	}
@@ -200,30 +183,30 @@ public class DriveAPI implements Runnable{
         	System.out.println(files.get(file).getMimeType() + " " + files.size());
         	if(files.get(file).getMimeType().equals("application/vnd.google-apps.folder")){
         		System.out.println(files.get(file).getId());
+                String[] message2 = {files.get(file).getId() + " " + files.size() , "l"};
+                attatchment.notifyObservers(message2);	
         		List<File> files_extra = getFilesFromParent(files.get(file).getId(), null);
         		files_final.addAll(files_extra);
         	}
         }
         System.out.println(files.size());
         System.out.println(files_final.size());
-        String[] message2 = {"" + files.size() , "l"};
-        attatchment.notifyObservers(message2);	
         return files_final;
 	}
 	
 	public String clearPermissions(String parent_id){
 		String[] message1 = {"Removing permission on all files higher than " + parent_id , "c"};
         attatchment.notifyObservers(message1);	
-
-
         
 		try {
 		    PauseTransition pause = new PauseTransition();
 		    pause.durationProperty();
 
+	        String[] hunt_message = {"Hunting for files and folders...", "c"};
+	        attatchment.notifyObservers(hunt_message );
 		    List<File> files = getFilesFromParent(parent_id, null);
 	        
-	        String[] message2 = {"List obtained " + parent_id + " number " + files.size() , "c"};
+	        String[] message2 = {"List obtained for " + parent_id + ", number of files " + files.size() , "c"};
 	        attatchment.notifyObservers(message2);	
 	        
 	        System.out.println(files.size());
@@ -237,12 +220,11 @@ public class DriveAPI implements Runnable{
             int file_no = 0;
             int total_files = files.size();
 	        for (File file : files) {	
-	            long now = System.currentTimeMillis();
-	    		while(now + cooldown_time > System.currentTimeMillis() ){}	    
-            	addToDeletePermissionBatch(batch, callback, file);
+            	boolean file_added = addToDeletePermissionBatch(batch, callback, file);
         		String[] message5 = {++file_no + " / " + total_files, "l"};
         		attatchment.notifyObservers(message5);	
-            	if (counter++ == batch_size){
+            	if (file_added && counter++ == batch_size){
+            		long now = System.currentTimeMillis();
             		now = System.currentTimeMillis();
             		while(now + cooldown_time > System.currentTimeMillis() ){}
             		batch.execute();
@@ -268,8 +250,10 @@ public class DriveAPI implements Runnable{
 	        String[] message6 = {total_files + " / " + total_files, "l"};
 	        attatchment.notifyObservers(message6);
 		}
-		catch (IOException e){
+		catch (Exception e){
 			e.printStackTrace();
+    		String[] message4 = {"Error: " + e.toString(), "c"};
+        	attatchment.notifyObservers(message4);	   
 			return "Error setting permissions: " + e.getMessage();	
 		}
 		
@@ -373,17 +357,18 @@ public class DriveAPI implements Runnable{
 	}
 	
 	
-	private String addToDeletePermissionBatch(BatchRequest batch, JsonBatchCallback<Void> callback, File file) throws IOException{				
+	private boolean addToDeletePermissionBatch(BatchRequest batch, JsonBatchCallback<Void> callback, File file) throws IOException{				
 			PermissionList permissions = service.permissions().list(file.getId()).execute();
-		
+			boolean added =false;
 			for(Permission perm : permissions.getPermissions()){
 				System.out.println(perm.toString());
 				if(!perm.getRole().equalsIgnoreCase("owner")){
 					service.permissions().delete(file.getId(), perm.getId())
 						    .queue(batch, callback);
+					added = true;
 				}
 			}
-			return "Batch added";
+			return added;
 	}
 	
     public String authenticate(){
