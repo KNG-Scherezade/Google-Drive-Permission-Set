@@ -25,6 +25,7 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.Drive.Files;
 import com.google.api.services.drive.Drive.Files.Get;
+import com.google.api.services.drive.Drive.Permissions.Create;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
@@ -43,39 +44,42 @@ public class DriveAPI implements Runnable{
 	String parent_id;
 	String type_of_permission;
 	String email_of_permission;
-	
-	int cooldown_time = 5000;
-	int batch_size = 35;
+	int notification_email;
+	String notification_message;
+	int cooldown_time = 8000;
+	int batch_size = 30;
 	
 	public DriveAPI(ConsoleModel cm){
 		this.attatchment = cm;
 
 	}
 	
-	public void setParam(String ft, String rl, String pi, String tp, String ep){
+	public void setParam(String ft, String rl, String pi, String tp, String ep, int ne, String nm){
 		folder_to_set = ft;
 		role_level = rl;
 		parent_id = pi;
 		type_of_permission = tp;
 		email_of_permission = ep;
+		notification_email = ne;
+		notification_message = nm;
 	}
 
 	@Override
 	public void run() {
 		if(folder_to_set != null)
-			setPermissions(folder_to_set, role_level, parent_id, type_of_permission, email_of_permission);
+			setPermissions();
 		else
-			clearPermissions(parent_id);
+			clearPermissions();
 	}
 	
-	public String setPermissions(String folder_to_set, String role_level, String parent_id, String type_of_permission, String email_of_permission){
+	public String setPermissions(){
 		type_of_permission = type_of_permission.toLowerCase();
 		role_level = role_level.toLowerCase();
         // Print the names and IDs for up to 10 files.
         FileList result;
         
         
-        String[] message1 = {"Getting all files of name " + folder_to_set + " to set root folder ID " + parent_id , "c"};
+        String[] message1 = {"Getting all files of name " + folder_to_set + " in root folder ID " + parent_id , "c"};
         attatchment.notifyObservers(message1);	
         
         
@@ -108,21 +112,26 @@ public class DriveAPI implements Runnable{
 	            int batch_counter = 0;       
 	            long now = System.currentTimeMillis();
         		while(now + cooldown_time > System.currentTimeMillis() ){}
-        		String[] message = {"Estimated time: " +  (files.size() / batch_size * 20) + " Seconds", "c"};
-	            attatchment.notifyObservers(message);	
 	            int file_no = 0;
 	            String[] message3 = {"Determining which are " + folder_to_set + " from " + total_files, "c"};
 	            attatchment.notifyObservers(message3);	
-	            for (File file : files) {
-        				String[] file_count = {total_files + " " + file.getId(), "l"};
-        		    	attatchment.notifyObservers(file_count);	
+	            List<File> files_proc = new ArrayList<File>();
+	            for (File file : files) {	
         			if(!file.getName().equalsIgnoreCase(folder_to_set)){
         				total_files--;
         				System.out.println(total_files);
-        				continue;
         			}
-    	
-	            	addToSetPermissionBatch(batch, callback, file, role_level, type_of_permission, email_of_permission);
+        			else{
+        				files_proc.add(file);
+        			}
+        			String[] file_count = {total_files + " " + file.getId(), "l"};
+    		    	attatchment.notifyObservers(file_count);
+	            }
+        		String[] message = {"Estimated time: " +  (files_proc.size() / batch_size * 20) + " Seconds", "c"};
+	            attatchment.notifyObservers(message);	
+	            System.out.println("FSize: " + files_proc.size());
+	            for (File file : files_proc) {
+	            	addToSetPermissionBatch(batch, callback, file);
             		String[] message5 = {++file_no + " / " + total_files, "l"};
             		attatchment.notifyObservers(message5);	
 	            	if (counter++ == batch_size){
@@ -138,14 +147,13 @@ public class DriveAPI implements Runnable{
 	            		counter = 0;
 	            	}
 	            }
-	            System.out.print(total_files + " ");
-	            System.out.println(counter);
+	            System.out.println(total_files + " " + counter);
 	            if(total_files == 0){
 		            String[] message7 = {"Nothing was found for " + parent_id + " <br/>", "r"};
 		            attatchment.notifyObservers(message7);	
 					return "Permissions set finished";	
 	            }
-	            else if(counter != batch_size - 1){
+	            else if(counter != batch_size){
 	            	batch.execute();
 	            }
 	            String[] message6 = {total_files + " / " + total_files, "l"};
@@ -194,7 +202,7 @@ public class DriveAPI implements Runnable{
         return files_final;
 	}
 	
-	public String clearPermissions(String parent_id){
+	public String clearPermissions(){
 		String[] message1 = {"Removing permission on all files higher than " + parent_id , "c"};
         attatchment.notifyObservers(message1);	
         
@@ -221,8 +229,6 @@ public class DriveAPI implements Runnable{
             int total_files = files.size();
 	        for (File file : files) {	
             	boolean file_added = addToDeletePermissionBatch(batch, callback, file);
-        		String[] message5 = {++file_no + " / " + total_files, "l"};
-        		attatchment.notifyObservers(message5);	
             	if (file_added && counter++ == batch_size){
             		long now = System.currentTimeMillis();
             		now = System.currentTimeMillis();
@@ -236,6 +242,9 @@ public class DriveAPI implements Runnable{
 	            	            
             		counter = 0;
             	}
+            	else if(!file_added) total_files--;
+        		String[] message5 = {++file_no + " / " + total_files, "l"};
+        		attatchment.notifyObservers(message5);	
             }
 	        System.out.print(total_files + " ");
 	        System.out.println(counter);
@@ -244,7 +253,8 @@ public class DriveAPI implements Runnable{
 	            attatchment.notifyObservers(message7);	
 				return "Permissions set finished";	
 	        }
-	        else if(counter != batch_size - 1){
+	        else if(counter != batch_size){
+	        	System.out.println(counter + " " + batch_size);
 	        	batch.execute();
 	        }
 	        String[] message6 = {total_files + " / " + total_files, "l"};
@@ -304,11 +314,11 @@ public class DriveAPI implements Runnable{
 		return obj;
 	}
 	
-	private String addToSetPermissionBatch(BatchRequest batch, JsonBatchCallback<Permission> callback, File file, String role_level, 
-			String type_of_permission, String email_of_permission) throws IOException{				
+	private String addToSetPermissionBatch(BatchRequest batch, JsonBatchCallback<Permission> callback, File file) throws IOException{				
 			Permission userPermission;
 			file.getTeamDriveId();
 			System.out.println(type_of_permission + " " + role_level + " " + email_of_permission);
+			System.out.println(notification_email + " " + notification_message);
 			if(email_of_permission == null){
 				userPermission = new Permission()
 						.set("supportsTeamDrives", "true")
@@ -317,17 +327,38 @@ public class DriveAPI implements Runnable{
 				//https://content.googleapis.com/drive/v3/files/140rDrFRHMozR_vScecNn7kZepyhYhIvR/permissions?supportsTeamDrives=true&alt=json&key=AIzaSyD-a9IF8KKYgoC3cpgS-Al7hLQDbugrDcw
 				//https://content.googleapis.com/drive/v3/files/1xdm8dubYeTO_WweyW57qsLun6aZTDYUi/permissions?supportsTeamDrives=true&alt=json&key=AIzaSyD-a9IF8KKYgoC3cpgS-Al7hLQDbugrDcw
 			}
+			else if(notification_email == 0 || notification_email == 2){
+				userPermission = new Permission()
+					    .setType(type_of_permission)
+					    .setRole(role_level)
+					    .setEmailAddress(email_of_permission);
+				service.permissions().create(file.getId(), userPermission)
+		    		.setFields("id")
+		    		.setSendNotificationEmail(false)
+		    		.queue(batch, callback);
+			}
+			else if(notification_message != null){
+				userPermission = new Permission()
+					    .setType(type_of_permission)
+					    .setRole(role_level)
+					    .setEmailAddress(email_of_permission)
+					    .set("sendNotificationEmail", "true");
+				service.permissions().create(file.getId(), userPermission)
+			    		.setFields("id")
+			    		.setEmailMessage(notification_message)
+			    		.setSendNotificationEmail(true)
+			    		.queue(batch, callback);
+			}
 			else{
 				userPermission = new Permission()
 						.set("supportsTeamDrives", "true")
 					    .setType(type_of_permission)
 					    .setRole(role_level)
 					    .setEmailAddress(email_of_permission);
+				service.permissions().create(file.getId(), userPermission)
+					    .setFields("id")
+					    .queue(batch, callback);
 			}
-		
-			service.permissions().create(file.getId(), userPermission)
-				    .setFields("id")
-				    .queue(batch, callback);
 			return "Batch added";
 	}
 	

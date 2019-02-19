@@ -164,14 +164,39 @@ public class ConsoleController implements ActionListener, Observer{
 				console_view.updateConsoleText(console_model.setPermissions());
 			}
 		}
-		else{
+		else if(console_model.email_of_permission == null){
 			console_model.email_of_permission = console_view.getConsoleInput().getText();
 			console_view.updateConsoleText("EMail: " +console_model.email_of_permission + "<br>");
 			
+			console_view.updateConsoleText("Send notification message?"
+					+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Enter 1 for message"
+					+ "<br>&nbsp;&nbsp;&nbsp;&nbsp;> Enter 2 for no message<br>");
+
+		}
+		else if(console_model.notification_email == 0){
+			if(console_view.getConsoleInput().getText().equalsIgnoreCase("1")){
+				console_model.notification_email = 1;
+				console_view.updateConsoleText("What is your message: <br>");
+				
+			}
+			else if(console_view.getConsoleInput().getText().equalsIgnoreCase("2")){
+				console_model.notification_email = 2;
+				console_view.updateConsoleText("No message will be sent. <br>");
+				
+				console_view.updateConsoleText("Permissions are being set");
+				//console_view.createLoadDialog();
+				console_view.updateConsoleText(console_model.setPermissions());
+			}
+		}
+		else{
+			console_model.notification_message = console_view.getConsoleInput().getText();
 			console_view.updateConsoleText("Permissions are being set. <strike>Notification when finished</strike>");
 			//console_view.createLoadDialog();
 			console_view.updateConsoleText(console_model.setPermissions());
 		}
+		
+		
+
 	}
 	
 	public void clearPermissions(){

@@ -9,6 +9,8 @@ public class ConsoleModel extends Observable{
 	public String role_level;
 	public String type_of_permission;
 	public String email_of_permission;
+	public int notification_email;
+	public String notification_message;
 	public String parent;
 
 	public ArrayList<Observer> observers = new ArrayList<Observer>();
@@ -21,13 +23,13 @@ public class ConsoleModel extends Observable{
 		return drive.authenticate();
 	}
 	public String setPermissions(){
-		drive.setParam(folder_to_set, role_level, parent, type_of_permission, email_of_permission);
+		drive.setParam(folder_to_set, role_level, parent, type_of_permission, email_of_permission, notification_email, notification_message);
 		new Thread(drive).start();
 		return ("Permission thread started");
 	}
 	
 	public String deletePermissions(){
-		drive.setParam(null, null, parent, null, null);
+		drive.setParam(null, null, parent, null, null, 0, null);
 		new Thread(drive).start();
 		return ("Permission thread started");
 	}
